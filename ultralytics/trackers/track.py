@@ -92,17 +92,23 @@ def on_predict_postprocess_end(predictor: object, persist: bool = False) -> None
             predictor.vid_path[i if is_stream else 0] = vid_path
 
         det = (result.obb if is_obb else result.boxes).cpu().numpy()
-        tracks = tracker.update(det, result.orig_img, getattr(result, "feats", None))
-        if len(tracks) == 0:
-            continue
-        idx = tracks[:, -1].astype(int)
-        predictor.results[i] = result[idx]
         feats = getattr(result, "feats", None)
-        if feats is not None:
-            predictor.results[i].feats = feats[idx]
 
-        update_args = {"obb" if is_obb else "boxes": torch.as_tensor(tracks[:, :-1])}
-        predictor.results[i].update(**update_args)
+        tracks = tracker.update(det, result.orig_img, getattr(result, "feats", None))
+        # overwrite result with tracks if they exist
+        if len(tracks) != 0:
+            idx = tracks[:, -1].astype(int)
+            predictor.results[i] = result[idx]
+            if feats is not None:
+                predictor.results[i].feats = feats[idx]
+
+            update_args = {"obb" if is_obb else "boxes": torch.as_tensor(tracks[:, :-1])}
+            predictor.results[i].update(**update_args)
+
+        # Store detection features for later use
+        if feats is not None:
+            predictor.results[i].det_feats = feats
+        predictor.results[i].det_boxes = det
 
 
 def register_tracker(model: object, persist: bool) -> None:
