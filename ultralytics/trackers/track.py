@@ -97,6 +97,9 @@ def on_predict_postprocess_end(predictor: object, persist: bool = False) -> None
             continue
         idx = tracks[:, -1].astype(int)
         predictor.results[i] = result[idx]
+        feats = getattr(result, "feats", None)
+        if feats is not None:
+            predictor.results[i].feats = feats[idx]
 
         update_args = {"obb" if is_obb else "boxes": torch.as_tensor(tracks[:, :-1])}
         predictor.results[i].update(**update_args)
