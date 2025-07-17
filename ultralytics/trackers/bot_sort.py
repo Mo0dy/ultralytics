@@ -234,7 +234,7 @@ class BOTSORT(BYTETracker):
             emb_dists = matching.embedding_distance(tracks, detections) / 2.0
             emb_dists[emb_dists > (1 - self.appearance_thresh)] = 1.0
             emb_dists[dists_mask] = 1.0
-            dists = np.minimum(dists, emb_dists)
+            dists = np.maximum(dists, emb_dists)
         return dists
 
     def multi_predict(self, tracks: List[BOTrack]) -> None:
